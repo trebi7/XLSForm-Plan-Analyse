@@ -467,7 +467,22 @@
     </div>
 
     <div class="section">
-      <h2><span class="num">4</span>Observations <span class="opt">optionnel</span></h2>
+      <h2><span class="num">4</span>Documents complémentaires <span class="opt">optionnel</span></h2>
+      <p class="hint">Protocole de l'étude, Termes de Référence (TDR) ou tout autre document décrivant l'activité. Ces documents aident à affiner le choix des variables et la rédaction du Plan d'Analyse.</p>
+
+      <div class="field">
+        <div class="dropzone" id="dropzoneDocs">
+          <div class="icon">📎</div>
+          <div class="main-txt">Cliquez pour choisir un ou plusieurs fichiers ou glissez-les ici</div>
+          <div class="sub-txt">.docx · .pdf — 20&nbsp;Mo max par fichier</div>
+          <div class="file-name" id="docsFileNames"></div>
+        </div>
+        <input type="file" id="documents_complementaires" name="documents_complementaires" accept=".docx,.pdf" multiple>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2><span class="num">5</span>Observations <span class="opt">optionnel</span></h2>
       <p class="hint">Précisez toute instruction particulière : sections à privilégier, contraintes de mise en forme, corrections à apporter à une version précédente, etc.</p>
       <div class="field">
         <textarea id="observations" name="observations" placeholder="Ex. : Merci d'ajouter une section sur la géolocalisation des sites."></textarea>
@@ -543,6 +558,53 @@
     }
   });
   fileInput.addEventListener('change', updateFileLabel);
+
+  // Documents complémentaires (protocole, TDR, etc.) — optionnels, plusieurs fichiers acceptés
+  const docsInput = document.getElementById('documents_complementaires');
+  const dropzoneDocs = document.getElementById('dropzoneDocs');
+  const docsFileNamesEl = document.getElementById('docsFileNames');
+  const MAX_DOCS_COMPLEMENTAIRES = 10;
+
+  dropzoneDocs.addEventListener('click', () => docsInput.click());
+  ['dragenter','dragover'].forEach(evt =>
+    dropzoneDocs.addEventListener(evt, (e) => { e.preventDefault(); dropzoneDocs.classList.add('drag'); })
+  );
+  ['dragleave','drop'].forEach(evt =>
+    dropzoneDocs.addEventListener(evt, (e) => { e.preventDefault(); dropzoneDocs.classList.remove('drag'); })
+  );
+  dropzoneDocs.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files.length) {
+      docsInput.files = e.dataTransfer.files;
+      updateDocsLabel();
+    }
+  });
+  docsInput.addEventListener('change', updateDocsLabel);
+
+  function updateDocsLabel(){
+    const files = Array.from(docsInput.files || []);
+    if (!files.length) {
+      dropzoneDocs.classList.remove('has-file');
+      docsFileNamesEl.textContent = '';
+      return;
+    }
+    const invalid = files.filter(f => !/\.(docx|pdf)$/i.test(f.name));
+    if (invalid.length) {
+      showStatus('error', 'Format non supporté parmi les documents complémentaires : ' + invalid.map(f => f.name).join(', ') + '. Seuls .docx et .pdf sont acceptés.');
+      docsInput.value = '';
+      dropzoneDocs.classList.remove('has-file');
+      docsFileNamesEl.textContent = '';
+      return;
+    }
+    if (files.length > MAX_DOCS_COMPLEMENTAIRES) {
+      showStatus('error', 'Trop de documents complémentaires (' + files.length + '). Merci de ne pas dépasser ' + MAX_DOCS_COMPLEMENTAIRES + ' fichiers.');
+      docsInput.value = '';
+      dropzoneDocs.classList.remove('has-file');
+      docsFileNamesEl.textContent = '';
+      return;
+    }
+    dropzoneDocs.classList.add('has-file');
+    docsFileNamesEl.innerHTML = files.map(f => '✓ ' + f.name + ' (' + (f.size/1024/1024).toFixed(2) + ' Mo)').join('<br>');
+  }
 
   const typeEtudeSelect = document.getElementById('type_etude');
   const typeEtudeAutreField = document.getElementById('typeEtudeAutreField');
@@ -688,6 +750,8 @@
     typeEtudeAutreInput.required = false;
     dropzone.classList.remove('has-file');
     fileNameEl.textContent = '';
+    dropzoneDocs.classList.remove('has-file');
+    docsFileNamesEl.textContent = '';
     statusEl.className = 'status';
   });
 
@@ -716,6 +780,7 @@
     fd.append('domaine', form.domaine.value.trim());
     fd.append('observations', form.observations.value.trim());
     fd.append('questionnaire_file', fileInput.files[0]);
+    Array.from(docsInput.files || []).forEach((f, i) => fd.append('doc_supp_' + i, f));
 
     submitBtn.disabled = true;
     submitBtn.classList.add('submitting');
