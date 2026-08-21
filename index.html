@@ -27,12 +27,18 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:linear-gradient(180deg,#eef2f7 0%,var(--bg) 320px);
     color:var(--text);
-    padding:32px 16px 64px;
+    padding:0 16px 64px;
   }
   .wrap{max-width:720px;margin:0 auto;}
   .hero{
+    position:sticky;
+    top:0;
+    z-index:20;
     text-align:center;
-    margin-bottom:28px;
+    margin:0 -16px 28px;
+    padding:24px 16px 20px;
+    background:linear-gradient(180deg,#eef2f7 0%,var(--bg) 90%);
+    box-shadow:0 8px 16px -8px rgba(16,30,54,.10);
   }
   .hero .badge{
     display:inline-block;
@@ -240,6 +246,127 @@
     margin-top:26px;
     line-height:1.6;
   }
+
+  /* ── Panneau de progression ── */
+  .progress-panel{
+    display:none;
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:0 8px 28px rgba(16,30,54,.08);
+    border:1px solid var(--border);
+    padding:28px;
+  }
+  .progress-panel.show{display:block;}
+  .progress-panel h2{
+    font-size:17px;
+    margin:0 0 4px;
+    color:var(--primary);
+  }
+  .progress-panel .sub{
+    font-size:13px;
+    color:var(--text-muted);
+    margin:0 0 22px;
+    line-height:1.5;
+  }
+  .progress-bar-track{
+    width:100%;
+    height:10px;
+    background:#d3e9da;
+    border-radius:999px;
+    overflow:hidden;
+    margin-bottom:8px;
+  }
+  .progress-bar-fill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,var(--primary-light),var(--accent-green));
+    border-radius:999px;
+    transition:width .3s ease;
+  }
+  .progress-meta{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--text-muted);
+    margin-bottom:22px;
+  }
+  .progress-meta .pct{font-weight:700;color:var(--primary);}
+  .steps{list-style:none;margin:0;padding:0;}
+  .steps li{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:9px 0;
+    font-size:13.5px;
+    color:var(--text-muted);
+  }
+  .steps li .step-icon{
+    flex:none;
+    width:22px;height:22px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    background:#dfe6ee;
+    color:#8592a3;
+    transition:background .2s,color .2s;
+  }
+  .steps li.active{color:var(--text);font-weight:600;}
+  .steps li.active .step-icon{
+    background:var(--primary-light);
+    color:#fff;
+  }
+  .steps li.active .step-icon::after{
+    content:'';
+    width:9px;height:9px;
+    border:2px solid rgba(255,255,255,.5);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  .steps li.done{color:var(--accent-green);}
+  .steps li.done .step-icon{
+    background:var(--accent-green);
+    color:#fff;
+  }
+  .steps li.done .step-icon::after{content:'✓';}
+  .progress-note{
+    margin-top:20px;
+    padding:12px 14px;
+    background:#eef4fa;
+    border-left:4px solid var(--primary-light);
+    border-radius:8px;
+    font-size:12.5px;
+    color:var(--text);
+    line-height:1.55;
+  }
+  .progress-done-banner{
+    display:none;
+    margin-top:20px;
+    padding:16px;
+    background:var(--accent-green-bg);
+    border-left:4px solid var(--accent-green);
+    border-radius:8px;
+    font-size:13.5px;
+    color:#1b5e20;
+    line-height:1.6;
+  }
+  .progress-done-banner.show{display:block;}
+  .progress-panel button.reset-btn{
+    margin-top:16px;
+    width:100%;
+    padding:11px 18px;
+    background:#fff;
+    color:var(--primary);
+    border:1.5px solid var(--primary-light);
+    border-radius:9px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    display:none;
+  }
+  .progress-panel button.reset-btn.show{display:block;}
 </style>
 </head>
 <body>
@@ -283,17 +410,43 @@
     </div>
 
     <div class="section">
-      <h2><span class="num">2</span>Contexte de l'étude <span class="opt">optionnel</span></h2>
-      <p class="hint">Si vous laissez ces champs vides, le sujet sera déduit automatiquement et le domaine à partir du contenu de votre questionnaire.</p>
+      <h2><span class="num">2</span>Contexte de l'étude</h2>
+      <p class="hint">Le type d'étude et le domaine ancrent votre Plan d'Analyse sur les standards internationaux et les méthodes statistiques propres à votre discipline (choix des tests, tableaux et graphiques adaptés). Le sujet, lui, est déduit automatiquement si vous le laissez vide.</p>
+
+      <div class="field">
+        <label for="type_etude">Type d'étude <span class="opt" style="color:var(--accent-green);border-color:var(--accent-green);background:var(--accent-green-bg);">requis</span></label>
+        <select id="type_etude" name="type_etude" required>
+          <option value="" selected disabled>Sélectionnez le type d'étude qui correspond le mieux…</option>
+          <option value="enquete_quantitative">Enquête quantitative (population générale)</option>
+          <option value="kap">Étude KAP (Connaissances, Attitudes, Pratiques)</option>
+          <option value="evaluation_impact">Évaluation d'impact</option>
+          <option value="baseline_endline">Étude de référence / mi-parcours / fin de projet (baseline · midline · endline)</option>
+          <option value="evaluation_projet">Évaluation de projet ou de programme</option>
+          <option value="etude_marche">Étude de marché</option>
+          <option value="enquete_satisfaction">Enquête de satisfaction / perception</option>
+          <option value="evaluation_besoins">Évaluation des besoins</option>
+          <option value="etude_qualitative">Étude qualitative (entretiens, focus groups)</option>
+          <option value="etude_mixte">Étude à méthodes mixtes (quantitatif + qualitatif)</option>
+          <option value="recherche_academique">Recherche académique</option>
+          <option value="audit_diagnostic">Audit / diagnostic organisationnel</option>
+          <option value="suivi_evaluation">Suivi-évaluation (S&amp;E) continu</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+
+      <div class="field" id="typeEtudeAutreField" style="display:none;">
+        <label for="type_etude_autre">Précisez le type d'étude <span class="opt" style="color:var(--accent-green);border-color:var(--accent-green);background:var(--accent-green-bg);">requis</span></label>
+        <input type="text" id="type_etude_autre" name="type_etude_autre" placeholder="Ex. : Étude de faisabilité technique">
+      </div>
 
       <div class="row-2">
         <div class="field">
-          <label for="sujet_etude">Sujet de l'étude</label>
+          <label for="sujet_etude">Sujet de l'étude <span class="opt">optionnel</span></label>
           <input type="text" id="sujet_etude" name="sujet_etude" placeholder="Ex. : Maturité climatique du secteur privé">
         </div>
         <div class="field">
-          <label for="domaine">Domaine / secteur</label>
-          <input type="text" id="domaine" name="domaine" placeholder="Ex. : Environnement &amp; Climat">
+          <label for="domaine">Domaine / secteur <span class="opt" style="color:var(--accent-green);border-color:var(--accent-green);background:var(--accent-green-bg);">requis</span></label>
+          <input type="text" id="domaine" name="domaine" placeholder="Ex. : Environnement &amp; Climat" required>
         </div>
       </div>
     </div>
@@ -331,6 +484,34 @@
 
   </form>
 
+  <div class="progress-panel" id="progressPanel">
+    <h2 id="progressTitle">Traitement de votre questionnaire en cours…</h2>
+    <p class="sub">Merci de laisser cette page ouverte. Le traitement complet dure généralement environ 3 minutes.</p>
+
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-meta">
+      <span id="progressStepLabel">Démarrage…</span>
+      <span class="pct" id="progressPct">0 %</span>
+    </div>
+
+    <ul class="steps" id="stepsList">
+      <li data-step="0"><span class="step-icon"></span>Réception et lecture du questionnaire</li>
+      <li data-step="1"><span class="step-icon"></span>Génération de la structure XLSForm (IA)</li>
+      <li data-step="2"><span class="step-icon"></span>Validation et auto-correction du formulaire</li>
+      <li data-step="3"><span class="step-icon"></span>Génération du Plan d'Analyse (IA)</li>
+      <li data-step="4"><span class="step-icon"></span>Mise en forme des fichiers (XLSForm + Word)</li>
+      <li data-step="5"><span class="step-icon"></span>Enregistrement sur Google Drive</li>
+      <li data-step="6"><span class="step-icon"></span>Envoi de l'email de confirmation</li>
+    </ul>
+
+    <div class="progress-note" id="progressNote">Cette progression est une estimation basée sur la durée moyenne de traitement. La confirmation officielle — avec les liens vers vos trois livrables — vous parvient par email.</div>
+
+    <div class="progress-done-banner" id="progressDoneBanner"></div>
+    <button type="button" class="reset-btn" id="resetBtn">Envoyer un autre questionnaire</button>
+  </div>
+
   <p class="footer-note">Vos livrables sont générés automatiquement par IA et envoyés par email en quelques minutes.<br>Aucune donnée n'est conservée au-delà du traitement de votre demande.</p>
 
 </div>
@@ -363,6 +544,17 @@
   });
   fileInput.addEventListener('change', updateFileLabel);
 
+  const typeEtudeSelect = document.getElementById('type_etude');
+  const typeEtudeAutreField = document.getElementById('typeEtudeAutreField');
+  const typeEtudeAutreInput = document.getElementById('type_etude_autre');
+
+  typeEtudeSelect.addEventListener('change', () => {
+    const isAutre = typeEtudeSelect.value === 'autre';
+    typeEtudeAutreField.style.display = isAutre ? '' : 'none';
+    typeEtudeAutreInput.required = isAutre;
+    if (!isAutre) typeEtudeAutreInput.value = '';
+  });
+
   function updateFileLabel(){
     if (fileInput.files.length) {
       const f = fileInput.files[0];
@@ -388,12 +580,129 @@
     statusEl.scrollIntoView({behavior:'smooth', block:'nearest'});
   }
 
+  // ── Barre de progression (estimation) ──
+  // Le webhook n8n répond dès réception du fichier (avant la fin du traitement réel),
+  // donc cette progression simule le déroulé mesuré du pipeline (~176s lors des tests)
+  // pour donner au client un suivi visuel ; la confirmation réelle arrive par email.
+  const STEPS = [
+    { label: 'Réception et lecture du questionnaire', seconds: 8 },
+    { label: 'Génération de la structure XLSForm (IA)', seconds: 40 },
+    { label: 'Validation et auto-correction du formulaire', seconds: 6 },
+    { label: "Génération du Plan d'Analyse (IA)", seconds: 100 },
+    { label: 'Mise en forme des fichiers (XLSForm + Word)', seconds: 12 },
+    { label: 'Enregistrement sur Google Drive', seconds: 8 },
+    { label: "Envoi de l'email de confirmation", seconds: 2 }
+  ];
+  const TOTAL_MS = STEPS.reduce((s, x) => s + x.seconds, 0) * 1000;
+  const CUM_MS = (() => { let c = 0; return STEPS.map(s => (c += s.seconds * 1000)); })();
+
+  const progressPanel = document.getElementById('progressPanel');
+  const progressFill = document.getElementById('progressFill');
+  const progressPct = document.getElementById('progressPct');
+  const progressStepLabel = document.getElementById('progressStepLabel');
+  const progressTitle = document.getElementById('progressTitle');
+  const progressNote = document.getElementById('progressNote');
+  const progressDoneBanner = document.getElementById('progressDoneBanner');
+  const resetBtn = document.getElementById('resetBtn');
+  const stepEls = Array.from(document.querySelectorAll('#stepsList li'));
+
+  let simInterval = null;
+  let simStart = null;
+  let ackReceived = false;
+  let ackMessage = '';
+  let simDone = false;
+
+  function renderProgress(elapsed){
+    const pct = Math.min(elapsed / TOTAL_MS, 1);
+    progressFill.style.width = (pct * 100).toFixed(0) + '%';
+    progressPct.textContent = Math.floor(pct * 100) + ' %';
+
+    let currentIdx = STEPS.length - 1;
+    for (let i = 0; i < CUM_MS.length; i++) {
+      if (elapsed < CUM_MS[i]) { currentIdx = i; break; }
+    }
+    stepEls.forEach((li, i) => {
+      li.classList.remove('active', 'done');
+      if (elapsed >= CUM_MS[i]) li.classList.add('done');
+      else if (i === currentIdx) li.classList.add('active');
+    });
+    progressStepLabel.textContent = pct >= 1 ? 'Traitement terminé (estimation)' : STEPS[currentIdx].label;
+  }
+
+  function startSimulation(){
+    simDone = false;
+    ackReceived = false;
+    simStart = Date.now();
+    renderProgress(0);
+    simInterval = setInterval(() => {
+      const elapsed = Date.now() - simStart;
+      renderProgress(elapsed);
+      if (elapsed >= TOTAL_MS) {
+        clearInterval(simInterval);
+        simInterval = null;
+        simDone = true;
+        checkCompletion();
+      }
+    }, 250);
+  }
+
+  function stopSimulation(){
+    if (simInterval) { clearInterval(simInterval); simInterval = null; }
+  }
+
+  function checkCompletion(){
+    if (!simDone) return;
+    // La confirmation de réception (ack) arrive normalement en 1-2s, bien avant la fin
+    // de la simulation. Si elle tarde exceptionnellement, on attend qu'elle arrive
+    // avant d'annoncer la fin du traitement.
+    if (!ackReceived) {
+      progressStepLabel.textContent = 'Finalisation…';
+      return;
+    }
+    progressTitle.textContent = 'Traitement terminé';
+    progressNote.style.display = 'none';
+    progressDoneBanner.textContent = '✅ ' + (ackMessage || "Vos livrables ont été générés. Vérifiez votre boîte email dans les instants qui suivent.");
+    progressDoneBanner.classList.add('show');
+    resetBtn.classList.add('show');
+  }
+
+  function showProgressPanel(){
+    form.style.display = 'none';
+    progressPanel.classList.add('show');
+    progressTitle.textContent = 'Traitement de votre questionnaire en cours…';
+    progressNote.style.display = 'block';
+    progressDoneBanner.classList.remove('show');
+    resetBtn.classList.remove('show');
+  }
+
+  function hideProgressPanel(){
+    progressPanel.classList.remove('show');
+    form.style.display = '';
+  }
+
+  resetBtn.addEventListener('click', () => {
+    stopSimulation();
+    hideProgressPanel();
+    form.reset();
+    typeEtudeAutreField.style.display = 'none';
+    typeEtudeAutreInput.required = false;
+    dropzone.classList.remove('has-file');
+    fileNameEl.textContent = '';
+    statusEl.className = 'status';
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     statusEl.className = 'status';
 
-    if (!form.nom_projet.value.trim() || !form.email_notification.value.trim() || !fileInput.files.length) {
-      showStatus('error', 'Merci de renseigner le nom du projet, votre email et de joindre votre questionnaire.');
+    if (!form.nom_projet.value.trim() || !form.email_notification.value.trim() || !form.type_etude.value || !form.domaine.value.trim() || !fileInput.files.length) {
+      showStatus('error', 'Merci de renseigner le nom du projet, votre email, le type d\'étude, le domaine / secteur et de joindre votre questionnaire.');
+      return;
+    }
+
+    if (form.type_etude.value === 'autre' && !typeEtudeAutreInput.value.trim()) {
+      showStatus('error', 'Merci de préciser le type d\'étude sélectionné.');
+      typeEtudeAutreInput.focus();
       return;
     }
 
@@ -401,6 +710,8 @@
     fd.append('nom_projet', form.nom_projet.value.trim());
     fd.append('email_notification', form.email_notification.value.trim());
     fd.append('language', form.language.value);
+    fd.append('type_etude', form.type_etude.value);
+    fd.append('type_etude_autre', typeEtudeAutreInput.value.trim());
     fd.append('sujet_etude', form.sujet_etude.value.trim());
     fd.append('domaine', form.domaine.value.trim());
     fd.append('observations', form.observations.value.trim());
@@ -410,15 +721,19 @@
     submitBtn.classList.add('submitting');
     btnLabel.textContent = 'Envoi en cours…';
 
+    showProgressPanel();
+    startSimulation();
+
     try {
       const res = await fetch(WEBHOOK_URL, { method: 'POST', body: fd });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const text = await res.text();
-      showStatus('success', '✅ ' + (text && text.trim() ? text.trim() : "Votre questionnaire a bien été reçu ! Vous recevrez le XLSForm, le Plan d'Analyse et le dictionnaire des variables par email dans quelques minutes."));
-      form.reset();
-      dropzone.classList.remove('has-file');
-      fileNameEl.textContent = '';
+      ackReceived = true;
+      ackMessage = (text && text.trim()) ? text.trim() : "Votre questionnaire a bien été reçu ! Vous recevrez le XLSForm, le Plan d'Analyse et le dictionnaire des variables par email dans quelques minutes.";
+      checkCompletion();
     } catch (err) {
+      stopSimulation();
+      hideProgressPanel();
       showStatus('error', "❌ Une erreur est survenue lors de l'envoi (" + err.message + "). Merci de réessayer dans quelques instants ou de contacter le support si le problème persiste.");
     } finally {
       submitBtn.disabled = false;
