@@ -644,16 +644,18 @@
 
   // ── Barre de progression (estimation) ──
   // Le webhook n8n répond dès réception du fichier (avant la fin du traitement réel),
-  // donc cette progression simule le déroulé mesuré du pipeline (~176s lors des tests)
-  // pour donner au client un suivi visuel ; la confirmation réelle arrive par email.
+  // donc cette progression simule le déroulé mesuré du pipeline (~4 min observées en
+  // conditions réelles, l'exécution complète variant entre ~4 et 6 min selon la taille
+  // du questionnaire) pour donner au client un suivi visuel ; la confirmation réelle
+  // arrive par email dès que le traitement se termine.
   const STEPS = [
-    { label: 'Réception et lecture du questionnaire', seconds: 8 },
-    { label: 'Génération de la structure XLSForm', seconds: 40 },
-    { label: 'Validation et auto-correction du formulaire', seconds: 6 },
-    { label: "Génération du Plan d'Analyse", seconds: 100 },
-    { label: 'Mise en forme des fichiers (XLSForm + Word)', seconds: 12 },
+    { label: 'Réception et lecture du questionnaire', seconds: 10 },
+    { label: 'Génération de la structure XLSForm', seconds: 55 },
+    { label: 'Validation et auto-correction du formulaire', seconds: 15 },
+    { label: "Génération du Plan d'Analyse", seconds: 130 },
+    { label: 'Mise en forme des fichiers (XLSForm + Word)', seconds: 18 },
     { label: 'Enregistrement sur Google Drive', seconds: 8 },
-    { label: "Envoi de l'email de confirmation", seconds: 2 }
+    { label: "Envoi de l'email de confirmation", seconds: 4 }
   ];
   const TOTAL_MS = STEPS.reduce((s, x) => s + x.seconds, 0) * 1000;
   const CUM_MS = (() => { let c = 0; return STEPS.map(s => (c += s.seconds * 1000)); })();
