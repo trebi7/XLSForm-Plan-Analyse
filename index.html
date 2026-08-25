@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <title>Plan Analyse — Générateur XLSForm & Plan d'Analyse</title>
 <style>
   :root{
@@ -490,6 +491,7 @@
     </div>
 
     <div class="submit-bar">
+      <div class="cf-turnstile" data-sitekey="0x4AAAAAAEam1E4e0eIB_z2U" data-language="fr"></div>
       <button type="submit" id="submitBtn">
         <span class="spinner"></span>
         <span class="btn-label">Envoyer mes livrables</span>
@@ -773,6 +775,7 @@
     }
 
     const fd = new FormData();
+    fd.append('cf-turnstile-response', form['cf-turnstile-response'].value);
     fd.append('nom_projet', form.nom_projet.value.trim());
     fd.append('email_notification', form.email_notification.value.trim());
     fd.append('language', form.language.value);
