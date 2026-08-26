@@ -407,6 +407,13 @@
             <option value="en">English</option>
           </select>
         </div>
+        <div class="field">
+          <label for="format_xlsform">Format du XLSForm à générer <span class="opt" style="color:var(--accent-green);border-color:var(--accent-green);background:var(--accent-green-bg);">requis</span></label>
+          <select id="format_xlsform" name="format_xlsform" required>
+            <option value="kobo" selected>KoboToolbox / ODK</option>
+            <option value="surveycto">SurveyCTO</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -779,6 +786,7 @@
     fd.append('nom_projet', form.nom_projet.value.trim());
     fd.append('email_notification', form.email_notification.value.trim());
     fd.append('language', form.language.value);
+    fd.append('format_xlsform', form.format_xlsform.value);
     fd.append('type_etude', form.type_etude.value);
     fd.append('type_etude_autre', typeEtudeAutreInput.value.trim());
     fd.append('sujet_etude', form.sujet_etude.value.trim());
