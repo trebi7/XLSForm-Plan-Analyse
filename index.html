@@ -376,7 +376,7 @@
   <div class="hero">
     <span class="badge">Plan Analyse — Automatisation</span>
     <h1>Transformez votre questionnaire en trois livrables professionnels</h1>
-    <p>Déposez votre questionnaire (Word, Excel ou PDF) : vous recevrez par email un formulaire XLSForm prêt pour KoboToolbox, un modèle de Plan d'Analyse rédigé et le dictionnaire complet des variables.</p>
+    <p>Déposez votre questionnaire (Word, Excel ou PDF) : vous recevrez par email un formulaire XLSForm prêt à déployer sur KoboToolbox&nbsp;/&nbsp;ODK ou sur SurveyCTO, au choix, un modèle de Plan d'Analyse rédigé et le dictionnaire complet des variables.</p>
     <div class="deliverables">
       <div class="item"><span class="dot"></span>XLSForm (+ dictionnaire)</div>
       <div class="item"><span class="dot"></span>Plan d'Analyse (Word)</div>
@@ -407,13 +407,15 @@
             <option value="en">English</option>
           </select>
         </div>
-        <div class="field">
-          <label for="format_xlsform">Format du XLSForm à générer <span class="opt" style="color:var(--accent-green);border-color:var(--accent-green);background:var(--accent-green-bg);">requis</span></label>
-          <select id="format_xlsform" name="format_xlsform" required>
-            <option value="kobo" selected>KoboToolbox / ODK</option>
-            <option value="surveycto">SurveyCTO</option>
-          </select>
-        </div>
+      </div>
+
+      <div class="field">
+        <label for="format_xlsform">Format du XLSForm à générer <span class="opt" style="color:var(--accent-green);border-color:var(--accent-green);background:var(--accent-green-bg);">requis</span></label>
+        <select id="format_xlsform" name="format_xlsform" required>
+          <option value="kobo" selected>KoboToolbox / ODK</option>
+          <option value="surveycto">SurveyCTO</option>
+        </select>
+        <p class="hint" style="margin:6px 0 0;">Les deux plateformes n'utilisent pas les mêmes noms de colonnes ni la même mise en forme des libellés. Choisissez celle sur laquelle vous déploierez le questionnaire : le fichier livré sera directement téléversable, sans retouche.</p>
       </div>
     </div>
 
@@ -510,7 +512,7 @@
 
   <div class="progress-panel" id="progressPanel">
     <h2 id="progressTitle">Traitement de votre questionnaire en cours…</h2>
-    <p class="sub">Merci de laisser cette page ouverte. Le traitement complet dure généralement environ 3 minutes.</p>
+    <p class="sub">Merci de laisser cette page ouverte. Le traitement complet dure généralement <strong>7 à 8 minutes</strong> : deux passages par le modèle sont nécessaires, un pour la structure du XLSForm et un pour le plan d'analyse.</p>
 
     <div class="progress-bar-track">
       <div class="progress-bar-fill" id="progressFill"></div>
@@ -657,15 +659,21 @@
   // conditions réelles, l'exécution complète variant entre ~4 et 6 min selon la taille
   // du questionnaire) pour donner au client un suivi visuel ; la confirmation réelle
   // arrive par email dès que le traitement se termine.
-  const STEPS = [
-    { label: 'Réception et lecture du questionnaire', seconds: 10 },
-    { label: 'Génération de la structure XLSForm', seconds: 55 },
-    { label: 'Validation et auto-correction du formulaire', seconds: 15 },
-    { label: "Génération du Plan d'Analyse", seconds: 130 },
-    { label: 'Mise en forme des fichiers (XLSForm + Word)', seconds: 18 },
-    { label: 'Enregistrement sur Google Drive', seconds: 8 },
-    { label: "Envoi de l'email de confirmation", seconds: 4 }
-  ];
+  // ─── Calage sur les durées réellement mesurées en production ─────────────────
+// 8 exécutions réelles relevées du 21 au 25 août 2026 : le traitement complet
+// dure de 6 min 07 s à 8 min 04 s (médiane 7 min 08 s), et l'e-mail part à la
+// seconde même où le workflow se termine. L'ancienne piste s'arrêtait à 4 min.
+// Le détail par nœud de l'exécution du 25 août montre que deux appels au modèle
+// concentrent 97 % du temps : structure XLSForm 247 s, plan d'analyse 221 s.
+const STEPS = [
+  { label: 'Réception et lecture du questionnaire', seconds: 14 },
+  { label: 'Génération de la structure XLSForm', seconds: 235 },
+  { label: 'Validation et auto-correction du formulaire', seconds: 10 },
+  { label: "Génération du Plan d'Analyse", seconds: 200 },
+  { label: 'Mise en forme des fichiers (XLSForm + Word)', seconds: 10 },
+  { label: 'Enregistrement sur Google Drive', seconds: 8 },
+  { label: "Envoi de l'email de confirmation", seconds: 3 }
+];
   const TOTAL_MS = STEPS.reduce((s, x) => s + x.seconds, 0) * 1000;
   const CUM_MS = (() => { let c = 0; return STEPS.map(s => (c += s.seconds * 1000)); })();
 
@@ -699,8 +707,20 @@
       if (elapsed >= CUM_MS[i]) li.classList.add('done');
       else if (i === currentIdx) li.classList.add('active');
     });
-    progressStepLabel.textContent = pct >= 1 ? 'Traitement terminé (estimation)' : STEPS[currentIdx].label;
+    progressStepLabel.textContent = pct >= 1
+      ? 'Traitement terminé (estimation)'
+      : STEPS[currentIdx].label + tempsRestant(elapsed);
   }
+
+// Compte à rebours affiché à côté du libellé d'étape : sur un traitement de huit
+// minutes, une barre qui avance sans dire combien de temps il reste pousse le
+// client à recharger la page ou à renvoyer son questionnaire.
+function tempsRestant(elapsed){
+  const reste = Math.max(0, Math.round((TOTAL_MS - elapsed) / 1000));
+  if (reste <= 0) return '';
+  const m = Math.floor(reste / 60), sec = reste % 60;
+  return ' — temps restant estimé : ' + (m > 0 ? m + ' min ' + (sec < 10 ? '0' : '') + sec + ' s' : sec + ' s');
+}
 
   function startSimulation(){
     simDone = false;
