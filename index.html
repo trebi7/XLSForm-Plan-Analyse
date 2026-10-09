@@ -192,6 +192,10 @@
   .dropzone .main-txt{font-size:14px;font-weight:600;color:var(--text);}
   .dropzone .sub-txt{font-size:12px;color:var(--text-muted);margin-top:4px;}
   .dropzone .file-name{font-size:13px;font-weight:600;color:var(--accent-green);margin-top:6px;word-break:break-all;}
+  .dropzone .doc-item{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:4px;}
+  .dropzone .doc-remove{font:inherit;font-size:12px;font-weight:600;color:#c62828;background:#fff;border:1px solid #f1c4c4;border-radius:4px;padding:2px 8px;cursor:pointer;}
+  .dropzone .doc-remove:hover{background:#ffebee;border-color:#c62828;}
+  .dropzone .doc-remove:focus-visible{outline:2px solid #c62828;outline-offset:2px;}
   input[type=file]{display:none;}
 
   .submit-bar{
@@ -582,7 +586,11 @@
   const docsFileNamesEl = document.getElementById('docsFileNames');
   const MAX_DOCS_COMPLEMENTAIRES = 10;
 
-  dropzoneDocs.addEventListener('click', () => docsInput.click());
+  // La liste est tenue en mémoire : chaque nouvel ajout complète les fichiers déjà
+  // choisis, et chaque fichier peut être retiré individuellement avant l'envoi.
+  let docsList = [];
+
+  dropzoneDocs.addEventListener('click', (e) => { if (e.target.closest('.doc-remove')) return; docsInput.click(); });
   ['dragenter','dragover'].forEach(evt =>
     dropzoneDocs.addEventListener(evt, (e) => { e.preventDefault(); dropzoneDocs.classList.add('drag'); })
   );
@@ -590,37 +598,56 @@
     dropzoneDocs.addEventListener(evt, (e) => { e.preventDefault(); dropzoneDocs.classList.remove('drag'); })
   );
   dropzoneDocs.addEventListener('drop', (e) => {
-    if (e.dataTransfer.files.length) {
-      docsInput.files = e.dataTransfer.files;
-      updateDocsLabel();
-    }
+    if (e.dataTransfer.files.length) ajouterDocs(e.dataTransfer.files);
   });
-  docsInput.addEventListener('change', updateDocsLabel);
+  docsInput.addEventListener('change', () => { ajouterDocs(docsInput.files); docsInput.value = ''; });
 
-  function updateDocsLabel(){
-    const files = Array.from(docsInput.files || []);
-    if (!files.length) {
-      dropzoneDocs.classList.remove('has-file');
-      docsFileNamesEl.textContent = '';
+  // Les fichiers valides sont gardés, les autres signalés ; un fichier déjà présent n'est pas ajouté deux fois.
+  function ajouterDocs(liste){
+    const nouveaux = Array.from(liste || []);
+    if (!nouveaux.length) return;
+    const invalid = nouveaux.filter(f => !/\.(docx|pdf)$/i.test(f.name));
+    const valides = nouveaux.filter(f => invalid.indexOf(f) === -1);
+    const fusion = docsList.slice();
+    valides.forEach(f => {
+      if (!fusion.some(d => d.name === f.name && d.size === f.size && d.lastModified === f.lastModified)) fusion.push(f);
+    });
+    if (fusion.length > MAX_DOCS_COMPLEMENTAIRES) {
+      showStatus('error', 'Trop de documents complémentaires (' + fusion.length + '). Merci de ne pas dépasser ' + MAX_DOCS_COMPLEMENTAIRES + ' fichiers.');
       return;
     }
-    const invalid = files.filter(f => !/\.(docx|pdf)$/i.test(f.name));
+    docsList = fusion;
+    updateDocsLabel();
     if (invalid.length) {
       showStatus('error', 'Format non supporté parmi les documents complémentaires : ' + invalid.map(f => f.name).join(', ') + '. Seuls .docx et .pdf sont acceptés.');
-      docsInput.value = '';
-      dropzoneDocs.classList.remove('has-file');
-      docsFileNamesEl.textContent = '';
-      return;
     }
-    if (files.length > MAX_DOCS_COMPLEMENTAIRES) {
-      showStatus('error', 'Trop de documents complémentaires (' + files.length + '). Merci de ne pas dépasser ' + MAX_DOCS_COMPLEMENTAIRES + ' fichiers.');
-      docsInput.value = '';
-      dropzoneDocs.classList.remove('has-file');
-      docsFileNamesEl.textContent = '';
-      return;
-    }
-    dropzoneDocs.classList.add('has-file');
-    docsFileNamesEl.innerHTML = files.map(f => '✓ ' + f.name + ' (' + (f.size/1024/1024).toFixed(2) + ' Mo)').join('<br>');
+  }
+
+  function retirerDoc(index){
+    docsList.splice(index, 1);
+    updateDocsLabel();
+  }
+
+  // Affiche la liste avec un bouton « Retirer » par fichier.
+  function updateDocsLabel(){
+    docsFileNamesEl.textContent = '';
+    dropzoneDocs.classList.toggle('has-file', docsList.length > 0);
+    docsList.forEach((f, i) => {
+      const ligne = document.createElement('div');
+      ligne.className = 'doc-item';
+      const nom = document.createElement('span');
+      nom.textContent = '✓ ' + f.name + ' (' + (f.size/1024/1024).toFixed(2) + ' Mo)';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'doc-remove';
+      btn.textContent = '✕ Retirer';
+      btn.title = 'Retirer le document ' + f.name;
+      btn.setAttribute('aria-label', 'Retirer le document ' + f.name);
+      btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); retirerDoc(i); });
+      ligne.appendChild(nom);
+      ligne.appendChild(btn);
+      docsFileNamesEl.appendChild(ligne);
+    });
   }
 
   const typeEtudeSelect = document.getElementById('type_etude');
@@ -787,8 +814,8 @@ function tempsRestant(elapsed){
     typeEtudeAutreInput.required = false;
     dropzone.classList.remove('has-file');
     fileNameEl.textContent = '';
-    dropzoneDocs.classList.remove('has-file');
-    docsFileNamesEl.textContent = '';
+    docsList = [];
+    updateDocsLabel();
     statusEl.className = 'status';
   });
 
@@ -848,7 +875,7 @@ function tempsRestant(elapsed){
     fd.append('domaine', form.domaine.value.trim());
     fd.append('observations', form.observations.value.trim());
     fd.append('questionnaire_file', fileInput.files[0]);
-    Array.from(docsInput.files || []).forEach((f, i) => fd.append('doc_supp_' + i, f));
+    docsList.forEach((f, i) => fd.append('doc_supp_' + i, f));
 
     submitBtn.disabled = true;
     submitBtn.classList.add('submitting');
